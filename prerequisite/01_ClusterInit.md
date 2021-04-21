@@ -29,32 +29,26 @@ EOF
 |Load Balancer|26443|TCP|
 
 아래 스크립트로 포트 오픈<br>
+
 MasterNode에 대해 다음 포트 오픈
 ```aidl
-portsMaster=( 6443 2379 2380 10250 10251 10252 6783 26443 )
-
-for i in portsMaster
-do
- iptables -I INPUT l -p tcp --dport portsMaster[i] -j ACCEPT
-done
+iptables -I INPUT 1 -p tcp --dport 6443 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 2379 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 2380 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 10250 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 10251 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 10252 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 6783 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 26443 -j ACCEPT
 ```
 
 WorkerNode에 대해 다음 포트 오픈
 ```aidl
-portsWorker=( 6783 6784 10250 26443)
-
-for i in portsWorker
-do
- iptables -I INPUT l -p tcp --dport portsMaster[i] -j ACCEPT
-done
-
-for (( c=30000; c<=32767; c++ ))
-do
- iptables -I INPUT 1 -p tcp --dport $c -j ACCEPT
-done
-
+iptables -I INPUT 1 -p tcp --dport 6783 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 30000-32767 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 10250 -j ACCEPT
+iptables -I INPUT 1 -p tcp --dport 26443 -j ACCEPT
 ```
-
 
 #### d. 스왑 메모리 해제
 ```aidl
