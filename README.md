@@ -1,1 +1,1 @@
-# pangea
+# pangea - Prototype_AI Structured Engineering_Guideline
