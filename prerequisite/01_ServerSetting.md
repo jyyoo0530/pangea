@@ -68,32 +68,7 @@ echo '1' > /proc/sys/net/ipv4/ip_forward
 ```
 RHEL이나 CentOS7 사용시 iptables가 무시되서 트래픽이 잘못 라우팅되는 문제가 발생한다고 하여 아래 설정이 추가됨
 
-#### f. 쿠버네티스 리포지터리 yum 추가 <<<<<여기부터
-```aidl
-cat <<EOF > /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-exclude=kubelet kubeadm kubectl
-EOF
-
-yum -y update
-```
-
-## 2. 도커 / 쿠버네티스 설치
-#### a. 도커 설치
-```aidl
-yum install -y https://download.docker.com/linux/centos/7/x86_64/stable/Packages/docker-ce-19.03.11-3.el7.x86_64.rpm \
-https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.4.4-3.1.el7.x86_64.rpm \
-https://download.docker.com/linux/centos/7/x86_64/stable/Packages/docker-ce-cli-20.10.5-3.el7.x86_64.rpm \
-http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.107-3.el7.noarch.rpm
-```
-쿠버네티스 공식 문서에서 권장하는 도커 버젼과 실제 도커 최신버젼은 차이가 있으니 확인.
-2021-03-25 현재 19.03 버젼 권장하고 있음.
+#### f. Docker cgroupDriver를 systemd로 변
 ```aidl
 mkdir /etc/docker
 
@@ -103,15 +78,11 @@ cat > /etc/docker/daemon.json <<EOF
   "log-driver": "json-file",
   "log-opts": {
     "max-size": "100m"
-  }
-// xfs 파일시스템의 경우 ftype=1이어야 overlay2 사용가능.
-// 현재 상암 서버의 경우, ftype=0으로 아래 옵션 사용불가.
-// 잠재적 문재를 일으킬 것으로 예상되나, 아직 문제 식별되지 않음.
-//  ,
-//  "storage-driver": "overlay2",
-//  "storage-opts": [
-//    "overlay2.override_kernel_check=true"
-//  ]
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
 }
 EOF
 
@@ -120,9 +91,9 @@ mkdir -p /etc/systemd/system/docker.service.d
 cgroup을 systemd로 변경하고 적용.
 #### b. docker 서비스 시작
 ```
-sudo systemctl daemon-reload
-sudo systemctl restart docker
-sudo systemctl enable docker
+systemctl daemon-reload
+systemctl restart docker
+systemctl enable docker
 ```
 
 #### c. 쿠버네티스 설치
@@ -186,7 +157,7 @@ systemctl restart docker
 
 #### c. nvidia-smi test
 docker내에서 gpu를 사용하기 위해서는 위해서는 적절한 Nvidia Driver와 CUDA버전의 확인이 필요하다.  
-자세한 내용은 [Nvidia container toolkit install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#platform-requirements)를 참고하면 좋다.
+자세한 내용은 [Nvidia container toolkit install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#platform-requirements) 를 참고하면 좋다.
 ```sh
 nvidia-smi
 # result example
@@ -199,7 +170,7 @@ nvidia-smi
 ```
 
 docker에서 CUDA를 통한 GPU 활용을 위해 다음과 같은 docker image를 사용하게 될 경우 적정한 CUDA버전의 지정이 필요하다.  
-앞서 살펴본 CUDA버전의 원하는 docker image를 Nvidia CUDA 공식 [Docker Hub](https://hub.docker.com/r/nvidia/cuda)에서 이미지를 받을 수 있다.
+앞서 살펴본 CUDA버전의 원하는 docker image를 Nvidia CUDA 공식 [Docker Hub](https://hub.docker.com/r/nvidia/cuda) 에서 이미지를 받을 수 있다.
 
 특정 버전의 이미지를 통해서 다음과 같이 동일한 테스트를 할 수 있다.
 ```sh
@@ -208,4 +179,4 @@ docker run --rm --gpus all nvidia/cuda:10.2-base nvidia-smi
 
 위에서 테스트한 이미지는 cuda version 10.2의 base 이미지를 사용하였고, Version 및 OS와 수행 목적에 따라 다양한 이미지를 제공해주고 있다.
 
-자세한 nvidia docker 사용법은 다음 [가이드](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html)를 참고하면 된다.
+자세한 nvidia docker 사용법은 다음 [가이드](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html) 를 참고하면 된다.
