@@ -25,13 +25,7 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 컨트롤 플레인이 정상적으로 마무리 될때 까지 기다린다
 
 ```aidl
-kubectl wait pod/kube-controller-manager-clt380jv79 --for=condition=Ready --timeout=300s -n kube-system
-```
-
-쿠버네티스 작업을 위해 기본 폴더로 이동
-
-```aidl
-cd /kubernetes
+kubectl wait pod/kube-controller-manager-master --for=condition=Ready --timeout=300s -n kube-system
 ```
 
 #### b. flannel operator 설치
@@ -68,15 +62,14 @@ kubectl get nodes
 
 ```aidl
 NAME         STATUS   ROLES                  AGE   VERSION
-clt380jv78   Ready    <none>                 13m   v1.20.4
-clt380jv79   Ready    control-plane,master   14m   v1.20.4
-clt380jv80   Ready    <none>                 12m   v1.20.4
+node-clt     Ready    <none>                 13m   v1.20.4
+master       Ready    control-plane,master   14m   v1.20.4
 ```
 
 #### e. taint 해제
 Master노드의 taint 상황 확인
 ```aidl
-kubectl describe node clt380jv79 | grep Taints
+kubectl describe node master | grep Taints
 ```
 Master노드에 클러스터 운영을 위한 추가 Pod을 구성하기 위해 Taint 해제한다.
 ```aidl
@@ -85,8 +78,6 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 
 좀더 명확한 노드관리를 위해 각 노드에 role 부여
 ```aidl
-kubectl label --overwrite nodes clt380jv80 kubernetes.io/role=iochord
-kubectl label --overwrite nodes clt380jv78 kubernetes.io/role=datacenter
-kubectl label --overwrite nodes clt380jv79 kubernetes.io/role=master
-kubectl label --overwrite nodes tif1-thinkstation-p520 kubernetes.io/role=gpu
+kubectl label --overwrite nodes master kubernetes.io/role=master
+kubectl label --overwrite nodes node-clt kubernetes.io/role=node-clt
 ```
